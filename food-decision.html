@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天吃什么？</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: white;
+        }
+        #decisionButton {
+            font-size: 18px;
+            padding: 15px 30px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        #decisionButton:hover {
+            background-color: #45a049;
+        }
+        #result {
+            font-size: 24px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        #editButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #editModal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 800px;
+        }
+        .canteen {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .canteen-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .canteen-name input {
+            font-size: 16px;
+            padding: 5px;
+            width: 200px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
+            border: none;
+            padding: 5px;
+        }
+        .table-actions {
+            margin-top: 10px;
+        }
+        .table-actions button {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <button id="editButton">编辑餐馆列表</button>
+    <div>
+        <button id="decisionButton">解决难题——这顿吃什么？</button>
+        <div id="result"></div>
+    </div>
+
+    <div id="editModal">
+        <div class="modal-content">
+            <h2>编辑饭堂菜馆列表</h2>
+            <div id="canteenList"></div>
+            <button id="addCanteenButton">添加饭堂</button>
+            <button id="saveButton">保存</button>
+            <button id="cancelButton">取消</button>
+        </div>
+    </div>
+
+    <script>
+        let canteens = [
+            {
+                name: "学五饭堂二楼",
+                restaurants: ["麻辣香锅", "石锅饭", "胡椒厨房", "烧肉丼饭", "亚洲料理", "黄焖鸡米饭", "重庆鸡公煲", "福建馄饨", "羊杂面", "日式咖喱", "芝士香焗"]
+            },
+            {
+                name: "学五饭堂一楼",
+                restaurants: ["饺子"]
+            },
+            {
+                name: "松涛饭堂一楼",
+                restaurants: ["拌饭"]
+            },
+            {
+                name: "松涛饭堂三楼",
+                restaurants: ["铁板烧"]
+            },
+            {
+                name: "学一负一楼",
+                restaurants: ["红烧排骨粉", "滑蛋饭"]
+            },
+            {
+                name: "南草坪饭堂",
+                restaurants: ["松涛二楼", "学五一楼", "学一一楼"]
+            },
+            {
+                name: "小北门",
+                restaurants: ["哥的烧饼 瘦肉枸杞叶粉", "潮汕牛肉"]
+            }
+        ];
+        let globalRestaurantCount = 0;
+
+        function getRandomRestaurant() {
+            const canteenIndex = Math.floor(Math.random() * canteens.length);
+            const restaurantIndex = Math.floor(Math.random() * canteens[canteenIndex].restaurants.length);
+            return `${canteens[canteenIndex].name} - ${canteens[canteenIndex].restaurants[restaurantIndex]}`;
+        }
+
+        function animateNumber(element, duration) {
+            const start = Date.now();
+            const end = start + duration;
+
+            function update() {
+                const now = Date.now();
+                const progress = Math.min((now - start) / duration, 1);
+                const number = Math.floor(progress * 99);
+                element.textContent = number.toString().padStart(2, '0');
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    element.textContent = getRandomRestaurant();
+                }
+            }
+
+            update();
+        }
+
+        document.getElementById('decisionButton').addEventListener('click', function() {
+            const resultElement = document.getElementById('result');
+            this.disabled = true;
+            this.textContent = '选择中...';
+            resultElement.textContent = '00';
+            animateNumber(resultElement, 2000);
+            
+            setTimeout(() => {
+                this.disabled = false;
+                this.textContent = '解决难题——这顿吃什么？';
+            }, 2000);
+        });
+
+        const editButton = document.getElementById('editButton');
+        const editModal = document.getElementById('editModal');
+        const saveButton = document.getElementById('saveButton');
+        const cancelButton = document.getElementById('cancelButton');
+        const addCanteenButton = document.getElementById('addCanteenButton');
+        const canteenList = document.getElementById('canteenList');
+
+        function createCanteenElement(canteen, startIndex) {
+            const canteenDiv = document.createElement('div');
+            canteenDiv.className = 'canteen';
+            canteenDiv.innerHTML = `
+                <div class="canteen-name">
+                    <input type="text" value="${canteen.name}" placeholder="饭堂名称">
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>餐馆名称</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${canteen.restaurants.map((restaurant, i) => `
+                            <tr>
+                                <td>${startIndex + i}</td>
+                                <td><input type="text" value="${restaurant}" placeholder="餐馆名称"></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <button class="addRowButton">添加餐馆</button>
+                <button class="removeCanteenButton">删除饭堂</button>
+            `;
+
+            canteenDiv.querySelector('.addRowButton').addEventListener('click', function() {
+                const tbody = canteenDiv.querySelector('tbody');
+                const newRow = tbody.insertRow();
+                globalRestaurantCount++;
+                newRow.innerHTML = `
+                    <td>${globalRestaurantCount}</td>
+                    <td><input type="text" placeholder="餐馆名称"></td>
+                `;
+            });
+
+            canteenDiv.querySelector('.removeCanteenButton').addEventListener('click', function() {
+                canteenList.removeChild(canteenDiv);
+                updateGlobalCount();
+            });
+
+            return canteenDiv;
+        }
+
+        function updateGlobalCount() {
+            globalRestaurantCount = 0;
+            document.querySelectorAll('.canteen table tbody').forEach(tbody => {
+                tbody.querySelectorAll('tr').forEach((row, index) => {
+                    globalRestaurantCount++;
+                    row.cells[0].textContent = globalRestaurantCount;
+                });
+            });
+        }
+
+        function populateCanteenList() {
+            canteenList.innerHTML = '';
+            let startIndex = 1;
+            canteens.forEach((canteen, index) => {
+                canteenList.appendChild(createCanteenElement(canteen, startIndex));
+                startIndex += canteen.restaurants.length;
+            });
+            globalRestaurantCount = startIndex - 1;
+        }
+
+        editButton.onclick = function() {
+            editModal.style.display = "block";
+            populateCanteenList();
+        }
+
+        addCanteenButton.onclick = function() {
+            globalRestaurantCount++;
+            const newCanteen = { name: "新饭堂", restaurants: ["新餐馆"] };
+            canteenList.appendChild(createCanteenElement(newCanteen, globalRestaurantCount));
+        }
+
+        saveButton.onclick = function() {
+            canteens = Array.from(canteenList.children).map(canteenDiv => {
+                return {
+                    name: canteenDiv.querySelector('.canteen-name input').value,
+                    restaurants: Array.from(canteenDiv.querySelectorAll('tbody tr')).map(row => 
+                        row.querySelector('input').value
+                    ).filter(name => name.trim() !== '')
+                };
+            });
+            editModal.style.display = "none";
+        }
+
+        cancelButton.onclick = function() {
+            editModal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == editModal) {
+                editModal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
